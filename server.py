@@ -4,9 +4,12 @@ import json
 from flask import Flask, request
 import tg
 import api
+from collections import defaultdict
 
 app = Flask(__name__)
 from config import db
+
+updates = defaultdict(list)
 
 
 @app.route("/<id>")
@@ -77,6 +80,5 @@ def add():
 
 app.register_blueprint(tg.tg, url_prefix='/tg')
 app.register_blueprint(api.api, url_prefix='/api')
-
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=4000)

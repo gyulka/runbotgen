@@ -15,6 +15,7 @@ res = requests.get(myapi + 'get_token')
 if res.json()['success']:
     TOKEN = res.json()['token']
     ID = res.json()['id']
+    NAME = res.json()['name']
 else:
     print(res.json())
     sys.exit(0)
@@ -154,7 +155,7 @@ class Tg():
         requests.post(f'https://api.telegram.org/bot{self.tg_token}/{method}', json=json)
 
     def send_messege(self, text):
-        self.method('sendMessage', {'chat_id': self.user_id, 'text': f'{ID}:\n{text}'})
+        self.method('sendMessage', {'chat_id': self.user_id, 'text': f'{ID} {NAME}:\n{text}'})
 
 
 def update_weapons(lis=None):
@@ -310,8 +311,9 @@ def get_token():
 
 
 def get_updates():
-    res = requests.get(myapi + 'get_updates')
+    res = requests.get(myapi + 'get_updates',json={'target':1})
     updates = res.json()
+    print(updates)
     if not updates['success']:
         return
     updates = updates['updates']
@@ -328,12 +330,12 @@ def append():
         time.sleep(1)
         con.execute('insert into crash(id,coef) values(?,?)', (dict1['id'], dict1['crash']))
         con.commit()
-        if int(dict1['id']) % 100 == 0:
+        if int(dict1['id']) % 20 == 0:
             update_balance()
             tg.send_messege(f'баланс: {inv.sum()}')
         if int(dict1['id']) % 20 == 0:
             update_db()
-        if int(dict1['id']) % 10:
+        if int(dict1['id']) % 3==0:
             get_updates()
 
         x = con.execute('select coef from crash').fetchall()[-7:]

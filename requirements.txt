@@ -1,0 +1,4 @@
+requests
+aiogram==2.14.3
+flask
+flask-cors
