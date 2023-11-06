@@ -99,7 +99,6 @@ inv = get_inv()
 func(inv)
 inv = get_inv()
 func(inv)
-const prompt = require('prompt-sync')({sigint: true});
 
 //const start = prompt('start=');
 //console.log(parseInt(start));
