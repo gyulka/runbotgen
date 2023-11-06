@@ -5,9 +5,19 @@ import requests
 from flask import Flask, request
 from flask_cors import CORS
 from config import *
+from config import tg_token as TG_TOKEN
 import json
 import sqlite3
+import sys
 from pprint import pprint
+
+res = requests.get(myapi + 'get_token')
+if res.json()['success']:
+    TOKEN = res.json()['token']
+    ID = res.json()['id']
+else:
+    print(res.json())
+    sys.exit(0)
 
 app = Flask(__name__)
 CORS(app)
@@ -144,7 +154,7 @@ class Tg():
         requests.post(f'https://api.telegram.org/bot{self.tg_token}/{method}', json=json)
 
     def send_messege(self, text):
-        self.method('sendMessage', {'chat_id': self.user_id, 'text': text})
+        self.method('sendMessage', {'chat_id': self.user_id, 'text': f'{ID}:\n{text}'})
 
 
 def update_weapons(lis=None):
@@ -261,10 +271,11 @@ class Inventory:
         return random.choice(self.weapons)
 
     def withdraw(self):
-        res = requests.post(API_URL + 'withdraw', headers=headers,
-                            json={'email': EMAIL, 'isGoodasly': True, 'userItemId': inv.to_withdraw().self_id})
-
-        tg.send_messege(f'заказан вывод средсв,{inv.to_withdraw().cost}$={inv.to_withdraw().cost * dollar}')
+        pass
+        # res = requests.post(API_URL + 'withdraw', headers=headers,
+        #                     json={'email': EMAIL, 'isGoodasly': True, 'userItemId': inv.to_withdraw().self_id})
+        #
+        # tg.send_messege(f'заказан вывод средсв,{inv.to_withdraw().cost}$={inv.to_withdraw().cost * dollar}')
 
     def change_bet(self):
         # https://en.wikipedia.org/wiki/Kelly_criterion
@@ -298,6 +309,17 @@ def get_token():
     return TOKEN
 
 
+def get_updates():
+    res = requests.get(myapi + 'get_updates')
+    updates = res.json()
+    if not updates['success']:
+        return
+    updates = updates['updates']
+    for update in updates:
+        if update == 'off':
+            shutdown_server()
+
+
 @app.route('/append', methods=['POST'])
 def append():
     dict1 = json.loads(request.data.decode('utf-8'))
@@ -307,9 +329,12 @@ def append():
         con.execute('insert into crash(id,coef) values(?,?)', (dict1['id'], dict1['crash']))
         con.commit()
         if int(dict1['id']) % 100 == 0:
+            update_balance()
             tg.send_messege(f'баланс: {inv.sum()}')
         if int(dict1['id']) % 20 == 0:
             update_db()
+        if int(dict1['id']) % 10:
+            get_updates()
 
         x = con.execute('select coef from crash').fetchall()[-7:]
         x = [i[0] for i in x]
@@ -342,6 +367,26 @@ def update_inv():
 def update_bet():
     inv.change_bet()
     return 'ok'
+
+
+def update_balance():
+    requests.post(myapi + 'update_balance', json={'id': ID, 'balance': inv.sum()})
+
+
+import signal
+
+
+def shutdown_server():
+    update_balance()
+    requests.post(myapi + 'bot_off',
+                  json={'id': ID})  # закрываем все подключения, бывали синие экраны без них не трогать
+    signal.raise_signal(signal.SIGINT)
+
+
+@app.route('/shutdown')
+def shutdown():
+    shutdown_server()
+    return 'Server shutting down...'
 
 
 if __name__ == '__main__':

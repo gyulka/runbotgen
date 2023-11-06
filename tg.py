@@ -14,7 +14,7 @@ def method(method_name, data):
     return requests.post(f'https://api.telegram.org/bot{tg_token}/{method_name}', json=data)
 
 
-def send_msg(chat_id, text, keyboard):
+def send_msg(chat_id, text, keyboard=None):
     return method('sendMessage', data={'chat_id': chat_id, 'text': text, 'reply_markup': keyboard})
 
 
@@ -35,5 +35,11 @@ def tg_api_handler():
     if data['message']['text'][0] == '/':
         if data['message']['text'] == '/start':
             send_msg(data['message']['from']['id'], 'привет я пока что не готов')
+        elif data['message']['text'] == '/off':
+            res = requests.post('http://localhost:4000/api/setupdates', json={'target': 'all', 'update': 'off'})
+            if res.json()['success']:
+                send_msg(data['message']['from']['id'], 'успешно, дождитесь выключения')
+            else:
+                send_msg(data['message']['from']['id'], 'что-то пошло не так')
 
     return {'ok': True}

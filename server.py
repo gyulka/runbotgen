@@ -75,8 +75,8 @@ def add():
     return ans
 
 
-if __name__ == "__main__":
-    app.register_blueprint(tg.tg, url_prefix='/tg')
-    app.register_blueprint(api.api, url_prefix='/api')
+app.register_blueprint(tg.tg, url_prefix='/tg')
+app.register_blueprint(api.api, url_prefix='/api')
 
+if __name__ == "__main__":
     app.run(host='0.0.0.0', port=4000)
