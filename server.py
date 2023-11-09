@@ -34,7 +34,7 @@ def index(id):
 
 
 @app.route('/off/<id>')
-def off():
+def off(id):
     con = sqlite3.connect(db)
 
     con.execute('update users set ison=0 where id=?', (id,))

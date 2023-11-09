@@ -43,7 +43,8 @@ headers = {'accept': 'application/json, text/plain, */*',
 
 # --------------------------------
 def tactic1(lis: list):
-    return lis[-1] < 1.2 and lis[-2] < 1.2 and lis[-3] < 1.2 and lis[-4] >= 1.2
+    # return True
+    return lis[-1] < 1.2 and lis[-2] < 1.2 and lis[-3] < 1.2
 
 
 def tactic2(lis: list):
@@ -86,7 +87,7 @@ tactic4.count = 1
 tactic5.count = 1  # 2
 tactic6.count = 1
 
-tactics = [tactic3]
+tactics = [tactic1]
 tactics.sort(key=lambda x: -x.count)
 
 
@@ -108,19 +109,12 @@ def update_db():
     res = requests.get(f'https://cloud.this.team/csgo/items.json?v={int(time.time())}', headers={
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0'})
     con = create_db_connect()
-    for i in res.json()['data']:
-        id = i[0]
-        cost = i[6]
-        try:
-            con.execute('insert into weapons(id,cost) values(?,?)', (id, cost))
-            con.commit()
-        except Exception:
-            con.execute('update weapons set cost=? where id=?', (cost, id))
-            con.commit()
+    con.execute('delete from weapons')
+    con.commit()
+    lis=[]
+    con.execute('insert into weapons(id,cost) values'+', '.join([f'({i[0]},{i[6]})' for i in res.json()['data']]))
     con.commit()
     con.close()
-
-
 class Weapon():
     def __init__(self, good_id, self_id, cost):
         self.good_id = good_id
@@ -249,9 +243,9 @@ class Inventory:
             return 0
         x = 1
         k = random.choice(ks)
-        response = requests.post(API_URL + 'make-bet', headers=headers, json={
+        response = requests.post(API_URL + 'crash/create-bet', headers=headers, json={
             'userItemIds': [i.self_id for i in self.weapons if abs(i.cost - self.bet) < self.bet * 0.1][:count],
-            'auto': round(k + random.randint(-2, 2) / 100, 2)
+            'auto':round(k + random.randint(-2, 2) / 100, 2)
         })
         print(response.text)
         while (not response) and x < 7:
@@ -260,7 +254,7 @@ class Inventory:
                 'userItemIds': [i.self_id for i in self.weapons if abs(i.cost - self.bet) < self.bet * 0.1][:count],
                 'auto': round(k + random.randint(-2, 2) / 100, 2)
             }
-            response = requests.post(API_URL + 'make-bet', headers=headers, json=data)
+            response = requests.post(API_URL + 'crash/create-bet', headers=headers, json=data)
             time.sleep(1)
             x += 1
             print(response.text)
@@ -357,6 +351,7 @@ def append():
 def update_inv():
     try:
         dict2 = json.loads(request.data.decode('utf-8'))
+        print(dict2)
         inv.update_inv(
             list(map(lambda x: Weapon(self_id=x['id'], good_id=x['itemId'], cost=x['price']), dict2['userItemIds'])),
             dict2['balance'])

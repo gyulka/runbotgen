@@ -33,14 +33,14 @@ async function get_inv(i) {
     'authorization': x['authorization'],},})
 //    console.log(res.getBody('utf8'))
     let response = JSON.parse(res.getBody('utf8'));
-    inv = response['data']['user']['items'];
+    inv = response['data']['inventory']['items'];
     return inv;
 }
 async function get_balance(){
     http = new XMLHttpRequest();
     res=request('GET', 'https://csgorun.direct/current-state?montaznayaPena=null', {'headers':{ 'authorization': x['authorization']}});
     let response = JSON.parse(res.getBody('utf8'));
-    balance = response['data']['user']['balance'];
+    balance = response['data']['auth']['user']['balance'];
     return balance;
 }
 async function func(ids) {
